@@ -55,3 +55,30 @@ def blank_database(database_url):
     yield database_url
     reset_schema(database_url)
     migrate(database_url, log=lambda _msg: None)
+
+
+@pytest.fixture
+def make_client(database_url):
+    """Build a TestClient for an app pointed at the test database."""
+    from fastapi.testclient import TestClient
+
+    from headcount.config import Settings
+    from headcount.web import create_app
+
+    def factory(**overrides):
+        settings = Settings(
+            database_url=overrides.pop("database_url", database_url),
+            statement_timeout_ms=overrides.pop("statement_timeout_ms", 5000),
+            connect_timeout_s=overrides.pop("connect_timeout_s", 5),
+            worker_poll_interval_s=1.0,
+            worker_reconnect_every=360,
+        )
+        assert not overrides, f"unknown settings: {overrides}"
+        return TestClient(create_app(settings), raise_server_exceptions=False)
+
+    return factory
+
+
+@pytest.fixture
+def client(db, make_client):
+    return make_client()
