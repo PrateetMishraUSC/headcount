@@ -18,10 +18,15 @@ from datetime import datetime, timezone
 from html import escape
 
 import psycopg
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from pathlib import Path
 
-from headcount import api
+from fastapi import FastAPI, Request
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from headcount import api, pages
 from headcount.config import Settings
 from headcount.db import connect
 from headcount.deps import settings_for
@@ -68,8 +73,9 @@ def wants_json(request: Request) -> bool:
 def error_page(status: int, title: str, message: str) -> HTMLResponse:
     body = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>{escape(title)} · Headcount</title>
-<meta name="viewport" content="width=device-width, initial-scale=1"></head>
-<body><main class="error"><h1>{escape(title)}</h1><p>{escape(message)}</p>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="page error"><h1>{escape(title)}</h1><p>{escape(message)}</p>
 <p><a href="/">Back to clubs</a></p></main></body></html>"""
     return HTMLResponse(body, status_code=status)
 
@@ -88,6 +94,15 @@ async def on_database_unavailable(request: Request, exc: psycopg.OperationalErro
     return _error(request, 503, "Temporarily unavailable", "The database is unavailable right now. Please try again shortly.")
 
 
+async def on_http_exception(request: Request, exc: StarletteHTTPException):
+    if wants_json(request):
+        return await http_exception_handler(request, exc)
+    titles = {404: "Not found", 409: "Not possible right now"}
+    title = titles.get(exc.status_code, "Something went wrong")
+    message = exc.detail if isinstance(exc.detail, str) else title
+    return error_page(exc.status_code, title, message)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Headcount", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
     app.state.settings = settings
@@ -95,6 +110,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # QueryCanceled subclasses OperationalError; the more specific handler wins.
     app.add_exception_handler(psycopg.errors.QueryCanceled, on_query_canceled)
     app.add_exception_handler(psycopg.OperationalError, on_database_unavailable)
+    app.add_exception_handler(StarletteHTTPException, on_http_exception)
+    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
     @app.get("/health", tags=["ops"])
     def health(request: Request):
@@ -114,6 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok", "database": "ok"}
 
     app.include_router(api.router)
+    app.include_router(pages.router)
     return app
 
 

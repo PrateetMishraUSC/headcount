@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<h1>Notifications</h1>
+{% if items %}
+<ul class="plain inbox">
+  {% for n in items %}
+  <li{% if not n.read_at %} class="unread"{% endif %}>
+    {% if not n.read_at %}<span class="tag ok">New</span> {% endif %}
+    <a href="/events/{{ n.event_id }}">{{ n.message }}</a>
+    <span class="muted">· {{ n.created_at | when }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Nothing yet. When you get a seat from a waitlist, you'll see it here.</p>
+{% endif %}
+{% endblock %}

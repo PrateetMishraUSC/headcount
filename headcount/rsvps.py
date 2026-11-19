@@ -263,7 +263,7 @@ def user_rsvps(conn: psycopg.Connection, user_id: int) -> list[dict]:
         )
         SELECT r.id, r.event_id, r.user_id, r.status, r.created_at, r.confirmed_at,
                r.cancelled_at, q.position,
-               e.title AS event_title, e.starts_at, e.location,
+               e.title AS event_title, e.starts_at, e.location, e.starts_at <= now() AS is_past,
                c.id AS club_id, c.name AS club_name
           FROM rsvps r
           JOIN events e ON e.id = r.event_id

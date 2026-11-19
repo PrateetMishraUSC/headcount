@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ club.name }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="/">Clubs</a></p>
+<h1>{{ club.name }}</h1>
+{% if club.description %}<p class="lede">{{ club.description }}</p>{% endif %}
+
+<h2>Upcoming events</h2>
+{% if upcoming %}
+<ul class="cards">
+  {% for e in upcoming %}
+  <li class="card">
+    <a class="card-title" href="/events/{{ e.id }}">{{ e.title }}</a>
+    <p>{{ e.starts_at | when }} · {{ e.location }}</p>
+    {% include "_seats.html" %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Nothing scheduled.</p>
+{% endif %}
+
+{% if past %}
+<h2>Past events</h2>
+<ul class="plain">
+  {% for e in past %}
+  <li><a href="/events/{{ e.id }}">{{ e.title }}</a> <span class="muted">· {{ e.starts_at | when("%-d %b %Y") }} · {{ e.confirmed }} attended</span></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

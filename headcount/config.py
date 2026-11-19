@@ -40,6 +40,7 @@ class Settings:
     connect_timeout_s: int
     worker_poll_interval_s: float
     worker_reconnect_every: int
+    display_timezone: str = "America/Los_Angeles"
 
 
 def _int(name: str, default: int) -> int:
@@ -72,6 +73,7 @@ def get_settings() -> Settings:
         connect_timeout_s=_int("DB_CONNECT_TIMEOUT_S", 5),
         worker_poll_interval_s=_float("WORKER_POLL_INTERVAL_S", 1.0),
         worker_reconnect_every=_int("WORKER_RECONNECT_EVERY", 360),
+        display_timezone=os.environ.get("DISPLAY_TIMEZONE", "").strip() or "America/Los_Angeles",
     )
     if settings.worker_reconnect_every < 1:
         raise RuntimeError("WORKER_RECONNECT_EVERY must be at least 1")

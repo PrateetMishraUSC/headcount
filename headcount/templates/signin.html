@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<h1>Sign in</h1>
+<form method="post" action="/signin" class="signin">
+  <input type="hidden" name="next" value="{{ next }}">
+  <label for="display_name">Display name</label>
+  <input id="display_name" name="display_name" value="{{ name }}" maxlength="40" required autofocus autocomplete="nickname">
+  {% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+  <button>Continue</button>
+</form>
+<p class="muted">No password. Pick the name other members will see on attendee lists. Using a name that's already taken signs you in as that person.</p>
+{% endblock %}

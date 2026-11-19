@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Headcount{% endblock %} · Headcount</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="site">
+    <nav class="page">
+      <a class="brand" href="/">Headcount</a>
+      <a href="/">Clubs</a>
+      {% if viewer %}
+        <a href="/me/rsvps">Your RSVPs</a>
+        <a href="/notifications">Notifications{% if unread %} <span class="badge">{{ unread }}</span>{% endif %}</a>
+        <span class="spacer"></span>
+        <span class="who">{{ viewer.display_name }}</span>
+        <form method="post" action="/signout" class="inline"><button class="link">Sign out</button></form>
+      {% else %}
+        <span class="spacer"></span>
+        <a href="/signin?next={{ request.url.path | urlencode }}">Sign in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

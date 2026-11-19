@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Clubs{% endblock %}
+{% block content %}
+<h1>Clubs</h1>
+{% if clubs %}
+<ul class="cards">
+  {% for club in clubs %}
+  <li class="card">
+    <a class="card-title" href="/clubs/{{ club.id }}">{{ club.name }}</a>
+    {% if club.description %}<p>{{ club.description }}</p>{% endif %}
+    <p class="muted">{{ club.upcoming_events }} upcoming event{{ "" if club.upcoming_events == 1 else "s" }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No clubs yet. Run <code>python -m headcount.seed</code> to load sample data.</p>
+{% endif %}
+{% endblock %}

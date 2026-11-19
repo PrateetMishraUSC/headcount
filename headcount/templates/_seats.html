@@ -1,0 +1,13 @@
+{# Capacity bar. Expects `e` with capacity, confirmed, waitlisted, seats_left. #}
+{% set pct = (100 * e.confirmed / e.capacity) | round | int %}
+<div class="seats">
+  <div class="bar{% if e.seats_left == 0 %} full{% endif %}" role="img"
+       aria-label="{{ e.confirmed }} of {{ e.capacity }} seats taken">
+    <span style="width: {{ [pct, 100] | min }}%"></span>
+  </div>
+  <p class="muted">
+    {{ e.confirmed }} of {{ e.capacity }} seats taken
+    {%- if e.seats_left %} · {{ e.seats_left }} left{% else %} · full{% endif %}
+    {%- if e.waitlisted %} · {{ e.waitlisted }} waiting{% endif %}
+  </p>
+</div>
