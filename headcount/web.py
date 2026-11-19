@@ -76,6 +76,7 @@ def error_page(status: int, title: str, message: str) -> HTMLResponse:
     body = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>{escape(title)} · Headcount</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
 <link rel="stylesheet" href="/static/style.css"></head>
 <body><main class="page error"><h1>{escape(title)}</h1><p>{escape(message)}</p>
 <p><a href="/">Back to clubs</a></p></main></body></html>"""

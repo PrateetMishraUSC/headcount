@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Sign in{% endblock %}
 {% block content %}
+<div class="panel">
 <h1>Sign in</h1>
 <form method="post" action="/signin" class="signin">
   <input type="hidden" name="next" value="{{ next }}">
@@ -21,4 +22,5 @@
 {% else %}
 <p class="muted">No password needed, unless you've protected your name with one. Pick the name other members will see on attendee lists. Using a name that's already taken (and has no password) signs you in as that person.</p>
 {% endif %}
+</div>
 {% endblock %}

@@ -2,37 +2,52 @@
 {% block title %}{{ event.title }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ event.club_id }}">{{ event.club_name }}</a></p>
-<div class="title-row">
-  <h1>{{ event.title }}</h1>
-  {% if can_manage and not event.is_past %}<a class="button secondary" href="/events/{{ event.id }}/edit">Edit event</a>{% endif %}
-</div>
-<dl class="facts">
-  <dt>When</dt><dd>{{ event.starts_at | when }}</dd>
-  <dt>Where</dt><dd>{{ event.location }}</dd>
-</dl>
-{% if event.description %}<p class="lede">{{ event.description }}</p>{% endif %}
-
-{% set e = event %}{% include "_seats.html" %}
+<section class="flyer plain">
+  <div class="tags">
+    <a class="tag club {{ event.club_id | tint }}" href="/clubs/{{ event.club_id }}">{{ event.club_name }}</a>
+    {% if event.is_past %}<span class="tag">Started</span>
+    {% elif event.seats_left == 0 %}<span class="tag full">Full</span>
+    {% else %}<span class="tag ok">Open</span>{% endif %}
+  </div>
+  <div class="title-row">
+    <h1>{{ event.title }}</h1>
+    {% if can_manage and not event.is_past %}<a class="button secondary" href="/events/{{ event.id }}/edit">Edit event</a>{% endif %}
+  </div>
+  <dl class="facts">
+    <dt>When</dt><dd>{{ event.starts_at | when }}</dd>
+    <dt>Where</dt><dd>{{ event.location }}</dd>
+  </dl>
+  {% if event.description %}<p class="lede">{{ event.description }}</p>{% endif %}
+  {% set e = event %}{% include "_seats.html" %}
+</section>
 
 <section class="action">
 {% if event.is_past %}
-  <p>This event has started, so RSVPs are closed.</p>
-  {% if mine %}<p>You were <strong>{{ mine.status }}</strong>.</p>{% endif %}
+  <div class="text">
+    <p>This event has started, so RSVPs are closed.</p>
+    {% if mine %}<p>You were <strong>{{ mine.status }}</strong>.</p>{% endif %}
+  </div>
 {% elif not viewer %}
-  <p><a class="button" href="/signin?next=/events/{{ event.id }}">Sign in to RSVP</a></p>
+  <div class="text"><p class="status">Want a seat?</p></div>
+  <a class="button" href="/signin?next=/events/{{ event.id }}">Sign in to RSVP</a>
 {% elif mine and mine.status == "confirmed" %}
-  <p class="status ok">You're going.</p>
+  <span class="big-number ok" aria-hidden="true">In</span>
+  <div class="text"><p class="status ok">You're going.</p><p class="muted">See you there.</p></div>
   <form method="post" action="/events/{{ event.id }}/cancel"><button class="secondary">Cancel my RSVP</button></form>
 {% elif mine and mine.status == "waitlisted" %}
-  <p class="status wait">You're <strong>#{{ mine.position }}</strong> on the waitlist. If a seat opens up you'll get it automatically and see a notification.</p>
+  <span class="big-number" aria-hidden="true">#{{ mine.position }}</span>
+  <div class="text">
+    <p class="status wait">You're <strong>#{{ mine.position }}</strong> on the waitlist.</p>
+    <p class="muted">If a seat opens up you'll get it automatically and see a notification.</p>
+  </div>
   <form method="post" action="/events/{{ event.id }}/cancel"><button class="secondary">Leave the waitlist</button></form>
 {% else %}
-  <form method="post" action="/events/{{ event.id }}/rsvp">
+  <form method="post" action="/events/{{ event.id }}/rsvp" class="text">
     {% if event.seats_left and not event.waitlisted %}
       <button>RSVP</button>
     {% else %}
       <button>Join the waitlist</button>
-      {% if event.seats_left %}<p class="muted">A seat just opened up; it's going to the next person on the waitlist.</p>{% endif %}
+      {% if event.seats_left %}<p class="muted" style="margin-top:10px">A seat just opened up; it's going to the next person on the waitlist.</p>{% endif %}
     {% endif %}
   </form>
 {% endif %}
@@ -42,15 +57,15 @@
   <section>
     <h2>Going ({{ attendees | length }})</h2>
     {% if attendees %}
-    <ul class="plain people">
+    <ul class="people">
       {% for a in attendees %}<li{% if viewer and a.user_id == viewer.id %} class="you"{% endif %}>{{ a.display_name }}</li>{% endfor %}
     </ul>
-    {% else %}<p class="muted">Nobody yet.</p>{% endif %}
+    {% else %}<p class="muted">Nobody yet. Be the first.</p>{% endif %}
   </section>
   <section>
     <h2>Waitlist ({{ waitlist | length }})</h2>
     {% if waitlist %}
-    <ol class="plain people">
+    <ol class="people queue">
       {% for w in waitlist %}<li{% if viewer and w.user_id == viewer.id %} class="you"{% endif %}><span class="pos">#{{ w.position }}</span> {{ w.display_name }}</li>{% endfor %}
     </ol>
     {% else %}<p class="muted">Nobody waiting.</p>{% endif %}

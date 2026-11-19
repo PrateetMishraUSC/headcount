@@ -2,35 +2,41 @@
 {% block title %}{{ club.name }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a></p>
-<div class="title-row">
-  <h1>{{ club.name }}</h1>
-  {% if can_manage %}
-  <span class="actions">
-    <a class="button" href="/clubs/{{ club.id }}/events/new">New event</a>
-    <a class="button secondary" href="/clubs/{{ club.id }}/edit">Edit club</a>
-    <a class="button secondary" href="/clubs/{{ club.id }}/organisers">Organisers</a>
-  </span>
-  {% endif %}
-</div>
-{% if club.description %}<p class="lede">{{ club.description }}</p>{% endif %}
-<p class="muted">{% if organisers %}Organised by {{ organisers | map(attribute="display_name") | join(", ") }}{% else %}No organisers yet{% endif %}</p>
+<section class="flyer {{ club.id | tint }}">
+  <div class="title-row">
+    <h1>{{ club.name }}</h1>
+    {% if can_manage %}
+    <span class="actions">
+      <a class="button" href="/clubs/{{ club.id }}/events/new">New event</a>
+      <a class="button secondary" href="/clubs/{{ club.id }}/edit">Edit club</a>
+      <a class="button secondary" href="/clubs/{{ club.id }}/organisers">Organisers</a>
+    </span>
+    {% endif %}
+  </div>
+  {% if club.description %}<p class="lede">{{ club.description }}</p>{% endif %}
+  <p class="meta">{% if organisers %}Organised by {{ organisers | map(attribute="display_name") | join(", ") }}{% else %}No organisers yet{% endif %}</p>
+</section>
 {% if is_organiser and not can_manage %}
 <p class="notice">You're an organiser of this club. <a href="/me/account?next=/clubs/{{ club.id }}">Set a password</a> to manage it.</p>
 {% endif %}
 
 <h2>Upcoming events</h2>
 {% if upcoming %}
-<ul class="cards">
+<ul class="cards two">
   {% for e in upcoming %}
   <li class="card">
+    <div class="tags">
+      <span class="tag">{{ e.starts_at | when("%a %-d %b · %-I:%M %p") }}</span>
+      {% if e.seats_left == 0 %}<span class="tag full">Full</span>{% else %}<span class="tag ok">Open</span>{% endif %}
+    </div>
     <a class="card-title" href="/events/{{ e.id }}">{{ e.title }}</a>
-    <p>{{ e.starts_at | when }} · {{ e.location }}</p>
+    <p class="muted">{{ e.location }}</p>
     {% include "_seats.html" %}
   </li>
   {% endfor %}
 </ul>
 {% else %}
-<p class="muted">Nothing scheduled.</p>
+<div class="empty"><p>Nothing scheduled yet.{% if can_manage %} <a href="/clubs/{{ club.id }}/events/new">Add the first event</a>.{% endif %}</p></div>
 {% endif %}
 
 {% if past %}

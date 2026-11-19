@@ -3,6 +3,7 @@
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ club.id }}">{{ club.name }}</a>
   {%- if event %} › <a href="/events/{{ event.id }}">{{ event.title }}</a>{% endif %}</p>
+<div class="panel">
 <h1>{{ "Edit event" if event else "New event" }}</h1>
 
 {% macro error(name) %}{% if errors[name] %}<p class="error-text" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
@@ -42,4 +43,5 @@
     <a href="{{ '/events/%d' % event.id if event else '/clubs/%d' % club.id }}">Cancel</a>
   </div>
 </form>
+</div>
 {% endblock %}

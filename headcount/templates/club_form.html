@@ -2,6 +2,7 @@
 {% block title %}{{ "Edit " ~ club.name if club else "New club" }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a>{% if club %} › <a href="/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}</p>
+<div class="panel">
 <h1>{{ "Edit club" if club else "New club" }}</h1>
 <form method="post" class="form">
   <label for="name">Name</label>
@@ -19,4 +20,5 @@
     <a href="{{ '/clubs/%d' % club.id if club else '/' }}">Cancel</a>
   </div>
 </form>
+</div>
 {% endblock %}

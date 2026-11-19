@@ -1,28 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Your RSVPs{% endblock %}
 {% macro row(r) %}
-<tr>
-  <td><a href="/events/{{ r.event_id }}">{{ r.event_title }}</a><br><span class="muted">{{ r.club_name }}</span></td>
-  <td>{{ r.starts_at | when }}</td>
-  <td>
-    {% if r.status == "confirmed" %}<span class="tag ok">Going</span>
-    {% elif r.status == "waitlisted" %}<span class="tag wait">Waitlist #{{ r.position }}</span>
-    {% else %}<span class="tag">Cancelled</span>{% endif %}
-  </td>
-</tr>
+<li class="row">
+  <div class="main">
+    <a href="/events/{{ r.event_id }}">{{ r.event_title }}</a>
+    <span class="tag club {{ r.club_id | tint }}">{{ r.club_name }}</span>
+    <div class="when">{{ r.starts_at | when }}</div>
+  </div>
+  {% if r.status == "confirmed" %}<span class="tag ok">Going</span>
+  {% elif r.status == "waitlisted" %}<span class="tag wait">Waitlist #{{ r.position }}</span>
+  {% else %}<span class="tag">Cancelled</span>{% endif %}
+</li>
 {% endmacro %}
 {% block content %}
 <h1>Your RSVPs</h1>
 <h2>Coming up</h2>
 {% if upcoming %}
-<table class="list"><thead><tr><th>Event</th><th>When</th><th>Status</th></tr></thead>
-<tbody>{% for r in upcoming %}{{ row(r) }}{% endfor %}</tbody></table>
+<ul class="rows">{% for r in upcoming %}{{ row(r) }}{% endfor %}</ul>
 {% else %}
-<p class="muted">Nothing coming up. <a href="/">Find an event</a>.</p>
+<div class="empty"><p>Nothing coming up. <a href="/">Find an event</a>.</p></div>
 {% endif %}
 {% if other %}
 <h2>Past and cancelled</h2>
-<table class="list"><thead><tr><th>Event</th><th>When</th><th>Status</th></tr></thead>
-<tbody>{% for r in other %}{{ row(r) }}{% endfor %}</tbody></table>
+<ul class="rows">{% for r in other %}{{ row(r) }}{% endfor %}</ul>
 {% endif %}
 {% endblock %}

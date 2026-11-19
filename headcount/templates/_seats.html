@@ -5,7 +5,7 @@
        aria-label="{{ e.confirmed }} of {{ e.capacity }} seats taken">
     <span style="width: {{ [pct, 100] | min }}%"></span>
   </div>
-  <p class="muted">
+  <p>
     {{ e.confirmed }} of {{ e.capacity }} seats taken
     {%- if e.seats_left %} · {{ e.seats_left }} left{% else %} · full{% endif %}
     {%- if e.waitlisted %} · {{ e.waitlisted }} waiting{% endif %}

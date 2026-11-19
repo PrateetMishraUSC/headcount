@@ -37,6 +37,7 @@ def _when(context, value: datetime, fmt: str = "%a %-d %b %Y · %-I:%M %p") -> s
 
 
 templates.env.filters["when"] = _when
+templates.env.filters["tint"] = lambda club_id: f"tint-{int(club_id) % 6}"  # each club's flyer colour
 
 
 # ---------------------------------------------------------------- helpers

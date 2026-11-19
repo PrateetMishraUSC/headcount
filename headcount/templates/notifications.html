@@ -3,16 +3,18 @@
 {% block content %}
 <h1>Notifications</h1>
 {% if items %}
-<ul class="plain inbox">
+<ul class="rows inbox">
   {% for n in items %}
-  <li{% if not n.read_at %} class="unread"{% endif %}>
-    {% if not n.read_at %}<span class="tag ok">New</span> {% endif %}
-    <a href="/events/{{ n.event_id }}">{{ n.message }}</a>
-    <span class="muted">· {{ n.created_at | when }}</span>
+  <li class="row{% if not n.read_at %} unread{% endif %}">
+    {% if not n.read_at %}<span class="tag">New</span>{% endif %}
+    <div class="main">
+      <a href="/events/{{ n.event_id }}">{{ n.message }}</a>
+      <div class="when">{{ n.created_at | when }}</div>
+    </div>
   </li>
   {% endfor %}
 </ul>
 {% else %}
-<p class="muted">Nothing yet. When you get a seat from a waitlist, you'll see it here.</p>
+<div class="empty"><p>Nothing yet. When you get a seat from a waitlist, you'll see it here.</p></div>
 {% endif %}
 {% endblock %}

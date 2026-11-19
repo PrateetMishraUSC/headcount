@@ -2,6 +2,7 @@
 {% block title %}Organisers · {{ club.name }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ club.id }}">{{ club.name }}</a></p>
+<div class="panel">
 <h1>Organisers</h1>
 <p class="lede">Organisers can edit the club, create and edit its events, and add or remove organisers.</p>
 
@@ -34,4 +35,5 @@
   <p class="hint">They need to have signed in at least once. They'll have to set a password before they can manage the club.</p>
   <div class="form-actions"><button>Add organiser</button></div>
 </form>
+</div>
 {% endblock %}
