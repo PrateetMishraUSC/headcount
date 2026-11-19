@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Your account{% endblock %}
+{% block content %}
+<h1>Your account</h1>
+<p class="lede">Signed in as <strong>{{ viewer.display_name }}</strong>.</p>
+
+{% if saved %}<p class="status ok">Password saved. Any other browser signed in as you has been signed out.</p>{% endif %}
+{% if next and not viewer.has_password %}
+<p class="notice">Organising a club needs a password, so nobody else can sign in with your name and change your events. Set one below and you'll go straight back.</p>
+{% endif %}
+
+<h2>{{ "Change your password" if viewer.has_password else "Protect your name with a password" }}</h2>
+{% if not viewer.has_password %}
+<p class="muted">Right now anyone who types "{{ viewer.display_name }}" signs in as you. With a password, they can't, and you'll be asked for it when you sign in.</p>
+{% endif %}
+<form method="post" action="/me/account" class="form">
+  <input type="hidden" name="next" value="{{ next }}">
+  <input type="hidden" name="username" value="{{ viewer.display_name }}" autocomplete="username">
+  {% if viewer.has_password %}
+  <label for="current_password">Current password</label>
+  <input id="current_password" name="current_password" type="password" required autocomplete="current-password">
+  {% endif %}
+  <label for="new_password">New password</label>
+  <input id="new_password" name="new_password" type="password" minlength="8" maxlength="200" required
+         autocomplete="new-password" {% if error %}aria-invalid="true" aria-describedby="password-error"{% endif %}>
+  <p class="hint">At least 8 characters.</p>
+  <label for="confirm_password">New password again</label>
+  <input id="confirm_password" name="confirm_password" type="password" required autocomplete="new-password">
+  {% if error %}<p class="error-text" id="password-error">{{ error }}</p>{% endif %}
+  <div class="form-actions"><button>Save password</button></div>
+</form>
+
+<h2>Clubs you organise</h2>
+{% if clubs %}
+<ul class="plain">
+  {% for c in clubs %}<li><a href="/clubs/{{ c.id }}">{{ c.name }}</a></li>{% endfor %}
+</ul>
+{% else %}
+<p class="muted">None. <a href="/clubs/new">Start a club</a> and you'll be its organiser.</p>
+{% endif %}
+{% endblock %}

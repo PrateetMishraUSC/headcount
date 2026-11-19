@@ -12,7 +12,7 @@ from psycopg.rows import dict_row
 
 from headcount import manage, rsvps
 from headcount.worker import Worker
-from tests.factories import make_club, make_event, make_users
+from tests.factories import ORGANISER_PASSWORD, make_club, make_event, make_organiser, make_users
 from tests.test_pages import sign_in, text
 
 LA = ZoneInfo("America/Los_Angeles")
@@ -221,6 +221,14 @@ def test_create_club_and_event_through_the_pages(client, db):
     sign_in(client, "Ann")
     assert "New club" in client.get("/").text
 
+    # Starting a club makes you its organiser, which needs a password first.
+    resp = client.get("/clubs/new", follow_redirects=False)
+    assert resp.headers["location"] == "/me/account?next=/clubs/new"
+    assert "Organising a club needs a password" in client.get(resp.headers["location"]).text
+    resp = client.post("/me/account", follow_redirects=False, data={
+        "new_password": ORGANISER_PASSWORD, "confirm_password": ORGANISER_PASSWORD, "next": "/clubs/new"})
+    assert resp.headers["location"] == "/clubs/new"
+
     form = client.get("/clubs/new")
     assert form.status_code == 200 and "Create club" in form.text
     resp = client.post("/clubs/new", data={"name": "Film Society", "description": "Weekly screenings."},
@@ -229,6 +237,7 @@ def test_create_club_and_event_through_the_pages(client, db):
     assert (resp.status_code, resp.headers["location"]) == (303, f"/clubs/{club['id']}")
     page = text(client.get(f"/clubs/{club['id']}"))
     assert "Film Society" in page and "Weekly screenings." in page and "New event" in page
+    assert "Organised by Ann" in page
 
     assert "Create event" in client.get(f"/clubs/{club['id']}/events/new").text
     resp = client.post(f"/clubs/{club['id']}/events/new", follow_redirects=False, data=event_fields(
@@ -242,8 +251,9 @@ def test_create_club_and_event_through_the_pages(client, db):
 
 
 def test_invalid_forms_are_shown_again_with_the_problems(client, db):
-    sign_in(client, "Ann")
-    make_club(db, name="Chess Club")
+    chess = make_club(db, name="Chess Club")
+    make_organiser(db, chess["id"], "Ann")
+    sign_in(client, "Ann", ORGANISER_PASSWORD)
     resp = client.post("/clubs/new", data={"name": "chess club", "description": "Mine."})
     assert resp.status_code == 400
     assert "There's already a club with this name." in html.unescape(resp.text)
@@ -259,7 +269,8 @@ def test_invalid_forms_are_shown_again_with_the_problems(client, db):
 
 def test_edit_club_through_the_pages(client, db):
     club = make_club(db, name="Chess Club", description="We play chess.")
-    sign_in(client, "Ann")
+    make_organiser(db, club["id"], "Ann")
+    sign_in(client, "Ann", ORGANISER_PASSWORD)
     form = client.get(f"/clubs/{club['id']}/edit")
     assert 'value="Chess Club"' in form.text and "We play chess." in form.text
     resp = client.post(f"/clubs/{club['id']}/edit", data={"name": "Chess & Go", "description": ""},
@@ -274,7 +285,8 @@ def test_edit_event_through_the_pages(client, db):
     ann, bo = make_users(db, "Ann", "Bo")
     rsvps.rsvp(db, event["id"], ann["id"])
     rsvps.rsvp(db, event["id"], bo["id"])
-    sign_in(client, "Cy")
+    make_organiser(db, club["id"], "Cy")
+    sign_in(client, "Cy", ORGANISER_PASSWORD)
 
     form = client.get(f"/events/{event['id']}/edit")
     assert form.status_code == 200
@@ -294,7 +306,8 @@ def test_edit_event_through_the_pages(client, db):
 def test_started_events_have_no_edit_page(client, db):
     club = make_club(db)
     past = make_event(db, club["id"], starts_in=timedelta(hours=-1))
-    sign_in(client, "Ann")
+    make_organiser(db, club["id"], "Ann")
+    sign_in(client, "Ann", ORGANISER_PASSWORD)
     assert "Edit event" not in client.get(f"/events/{past['id']}").text
     for resp in (client.get(f"/events/{past['id']}/edit"),
                  client.post(f"/events/{past['id']}/edit", data=event_fields())):

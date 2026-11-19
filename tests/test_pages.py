@@ -10,9 +10,10 @@ from headcount.worker import Worker
 from tests.factories import make_club, make_event, make_user, make_users
 
 
-def sign_in(client, name):
-    resp = client.post("/signin", data={"display_name": name, "next": "/"}, follow_redirects=False)
-    assert resp.status_code == 303
+def sign_in(client, name, password=""):
+    resp = client.post("/signin", data={"display_name": name, "password": password, "next": "/"},
+                       follow_redirects=False)
+    assert resp.status_code == 303, resp.text
     return resp
 
 

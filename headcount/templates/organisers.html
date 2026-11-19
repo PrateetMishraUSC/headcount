@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Organisers · {{ club.name }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ club.id }}">{{ club.name }}</a></p>
+<h1>Organisers</h1>
+<p class="lede">Organisers can edit the club, create and edit its events, and add or remove organisers.</p>
+
+{% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+
+<table class="list">
+  <thead><tr><th>Name</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+  {% for p in people %}
+    <tr>
+      <td>{{ p.display_name }}{% if p.user_id == viewer.id %} <span class="muted">(you)</span>{% endif %}
+        {% if not p.has_password %}<br><span class="tag wait">needs to set a password</span>{% endif %}</td>
+      <td class="muted">{{ p.added_at | when("%-d %b %Y") }}{% if p.added_by %} by {{ p.added_by }}{% endif %}</td>
+      <td>
+        {% if people | length > 1 %}
+        <form method="post" action="/clubs/{{ club.id }}/organisers/{{ p.user_id }}/remove" class="inline">
+          <button class="link">{{ "Step down" if p.user_id == viewer.id else "Remove" }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Add an organiser</h2>
+<form method="post" action="/clubs/{{ club.id }}/organisers" class="form">
+  <label for="display_name">Their display name</label>
+  <input id="display_name" name="display_name" value="{{ name }}" maxlength="40" required>
+  <p class="hint">They need to have signed in at least once. They'll have to set a password before they can manage the club.</p>
+  <div class="form-actions"><button>Add organiser</button></div>
+</form>
+{% endblock %}

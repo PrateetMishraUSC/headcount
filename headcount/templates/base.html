@@ -15,7 +15,7 @@
         <a href="/me/rsvps">Your RSVPs</a>
         <a href="/notifications">Notifications{% if unread %} <span class="badge">{{ unread }}</span>{% endif %}</a>
         <span class="spacer"></span>
-        <span class="who">{{ viewer.display_name }}</span>
+        <a class="who" href="/me/account">{{ viewer.display_name }}</a>
         <form method="post" action="/signout" class="inline"><button class="link">Sign out</button></form>
       {% else %}
         <span class="spacer"></span>

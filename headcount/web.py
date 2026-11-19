@@ -14,6 +14,7 @@ API paths get JSON errors, pages get a small HTML error page.
 import json
 import sys
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from html import escape
 
@@ -27,8 +28,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from headcount import api, pages
-from headcount.config import Settings
+from headcount import api, auth, pages
+from headcount.config import Settings, get_settings
 from headcount.db import connect
 from headcount.deps import settings_for
 
@@ -98,7 +99,7 @@ async def on_database_unavailable(request: Request, exc: psycopg.OperationalErro
 async def on_http_exception(request: Request, exc: StarletteHTTPException):
     if wants_json(request):
         return await http_exception_handler(request, exc)
-    titles = {404: "Not found", 409: "Not possible right now"}
+    titles = {403: "Not allowed", 404: "Not found", 409: "Not possible right now"}
     title = titles.get(exc.status_code, "Something went wrong")
     message = exc.detail if isinstance(exc.detail, str) else title
     return error_page(exc.status_code, title, message)
@@ -114,8 +115,18 @@ async def on_validation_error(request: Request, exc: RequestValidationError):
     return error_page(400, "Something went wrong", "That request didn't make sense. Go back and try again.")
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Fail at startup, not on the first sign-in, if settings are missing."""
+    if app.state.settings is None:
+        app.state.settings = get_settings()
+    auth.check_secret_key(app.state.settings.secret_key)
+    yield
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
-    app = FastAPI(title="Headcount", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
+    app = FastAPI(title="Headcount", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None,
+                  lifespan=lifespan)
     app.state.settings = settings
     app.add_middleware(RequestLogMiddleware)
     # QueryCanceled subclasses OperationalError; the more specific handler wins.

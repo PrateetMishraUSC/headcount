@@ -4,7 +4,7 @@
 <p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ event.club_id }}">{{ event.club_name }}</a></p>
 <div class="title-row">
   <h1>{{ event.title }}</h1>
-  {% if not event.is_past %}<a class="button secondary" href="/events/{{ event.id }}/edit">Edit event</a>{% endif %}
+  {% if can_manage and not event.is_past %}<a class="button secondary" href="/events/{{ event.id }}/edit">Edit event</a>{% endif %}
 </div>
 <dl class="facts">
   <dt>When</dt><dd>{{ event.starts_at | when }}</dd>

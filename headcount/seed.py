@@ -12,6 +12,10 @@ RSVPs go through the real RSVP code, a few are then cancelled, and the
 worker's promotion step runs once, so the data obeys the same rules as live
 traffic (no overbooking, nobody waiting while a seat is free) and some people
 already have "You got a spot" notifications.
+
+The first five people each organise one club and share the password in
+SEED_ORGANISER_PASSWORD, so you can try the organiser pages. Development and
+staging only: never seed a production database.
 """
 
 import argparse
@@ -23,7 +27,7 @@ from zoneinfo import ZoneInfo
 
 import psycopg
 
-from headcount import rsvps
+from headcount import auth, rsvps
 from headcount.config import get_settings
 from headcount.db import connect
 from headcount.worker import MAX_EVENTS_PER_POLL, promote_one_event
@@ -31,7 +35,8 @@ from headcount.worker import MAX_EVENTS_PER_POLL, promote_one_event
 RANDOM_SEED = 20261118
 NUM_USERS = 200
 CANCEL_RATE = 0.12
-APP_TABLES = "notifications, rsvps, events, clubs, users"
+APP_TABLES = "notifications, rsvps, club_organisers, events, clubs, users"
+SEED_ORGANISER_PASSWORD = "headcount-dev"  # dev/staging sample data only
 
 FIRST_NAMES = [
     "Aaliyah", "Ben", "Camila", "Daniel", "Elena", "Farah", "Gabriel", "Hana", "Isaac", "Jasmine",
@@ -132,12 +137,16 @@ def seed(conn: psycopg.Connection, *, now: datetime | None = None, tz: str = "Am
     users = [rsvps.find_or_create_user(conn, name) for name in make_names(rng, num_users)]
     user_ids = [u["id"] for u in users]
 
+    organiser_hash = auth.hash_password(SEED_ORGANISER_PASSWORD)
     event_count = 0
     for club_index, (club_name, club_description, events) in enumerate(CLUBS):
         club_id = conn.execute(
             "INSERT INTO clubs (name, description) VALUES (%s, %s) RETURNING id",
             (club_name, club_description),
         ).fetchone()["id"]
+        organiser_id = user_ids[club_index]
+        conn.execute("UPDATE users SET password_hash = %s WHERE id = %s", (organiser_hash, organiser_id))
+        conn.execute("INSERT INTO club_organisers (club_id, user_id) VALUES (%s, %s)", (club_id, organiser_id))
         for (title, location, description, capacity, demand), starts_at in zip(
             events, event_times(rng, now, zone, club_index, len(events))
         ):
@@ -181,13 +190,20 @@ def main(argv: list[str] | None = None) -> int:
         except DatabaseNotEmpty as exc:
             print(f"seed: {exc}", file=sys.stderr)
             return 1
-        sample = [r["display_name"] for r in conn.execute("SELECT display_name FROM users ORDER BY id LIMIT 3")]
+        sample = [r["display_name"] for r in conn.execute(
+            "SELECT display_name FROM users WHERE password_hash IS NULL ORDER BY id LIMIT 3")]
+        organisers = conn.execute(
+            """SELECT u.display_name, c.name FROM club_organisers o
+                 JOIN users u ON u.id = o.user_id JOIN clubs c ON c.id = o.club_id ORDER BY c.id"""
+        ).fetchall()
     print(
         "seeded {clubs} clubs, {users} users, {events} events; "
         "RSVPs: {confirmed} confirmed, {waitlisted} waitlisted, {cancelled} cancelled; "
         "{notifications} notifications".format(**counts)
     )
-    print(f"sign in as e.g. {', '.join(sample)}")
+    print(f"sign in as e.g. {', '.join(sample)} (no password)")
+    print(f"organisers (password {SEED_ORGANISER_PASSWORD!r}): "
+          + "; ".join(f"{o['display_name']} ({o['name']})" for o in organisers))
     return 0
 
 

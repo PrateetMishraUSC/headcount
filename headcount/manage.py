@@ -134,16 +134,23 @@ def _check_club_name_free(conn: psycopg.Connection, name: str, except_id: int | 
         raise Invalid({"name": "There's already a club with this name."})
 
 
-def create_club(conn: psycopg.Connection, *, name, description="") -> dict:
+def create_club(conn: psycopg.Connection, *, name, description="", organiser_id: int | None = None) -> dict:
+    """Create a club; `organiser_id` (the person creating it) becomes its first organiser."""
     club = clean_club(name=name, description=description)
     try:
         with conn.transaction():
             _check_club_name_free(conn, club["name"])
-            return conn.execute(
+            row = conn.execute(
                 f"INSERT INTO clubs (name, description) VALUES (%(name)s, %(description)s) "
                 f"RETURNING {_CLUB_COLUMNS}",
                 club,
             ).fetchone()
+            if organiser_id is not None:
+                conn.execute(
+                    "INSERT INTO club_organisers (club_id, user_id, added_by) VALUES (%s, %s, %s)",
+                    (row["id"], organiser_id, organiser_id),
+                )
+            return row
     except pg_errors.UniqueViolation:  # created by someone else at the same moment
         raise Invalid({"name": "There's already a club with this name."}) from None
 

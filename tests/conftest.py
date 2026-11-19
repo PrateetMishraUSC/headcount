@@ -12,7 +12,8 @@ import pytest
 from headcount.config import load_dotenv
 from headcount.migrate import migrate
 
-APP_TABLES = ["notifications", "rsvps", "events", "clubs", "users"]
+APP_TABLES = ["notifications", "rsvps", "club_organisers", "events", "clubs", "users"]
+TEST_SECRET_KEY = "test-secret-key-that-is-at-least-32-characters"
 
 
 def _test_database_url() -> str:
@@ -72,6 +73,7 @@ def make_client(database_url):
             connect_timeout_s=overrides.pop("connect_timeout_s", 5),
             worker_poll_interval_s=1.0,
             worker_reconnect_every=360,
+            secret_key=overrides.pop("secret_key", TEST_SECRET_KEY),
         )
         assert not overrides, f"unknown settings: {overrides}"
         return TestClient(create_app(settings), raise_server_exceptions=False)

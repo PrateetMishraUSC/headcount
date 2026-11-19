@@ -41,6 +41,7 @@ class Settings:
     worker_poll_interval_s: float
     worker_reconnect_every: int
     display_timezone: str = "America/Los_Angeles"
+    secret_key: str = ""  # signs the sign-in cookie; only the web app needs it
 
 
 def _int(name: str, default: int) -> int:
@@ -74,6 +75,7 @@ def get_settings() -> Settings:
         worker_poll_interval_s=_float("WORKER_POLL_INTERVAL_S", 1.0),
         worker_reconnect_every=_int("WORKER_RECONNECT_EVERY", 360),
         display_timezone=os.environ.get("DISPLAY_TIMEZONE", "").strip() or "America/Los_Angeles",
+        secret_key=os.environ.get("SECRET_KEY", "").strip(),
     )
     if settings.worker_reconnect_every < 1:
         raise RuntimeError("WORKER_RECONNECT_EVERY must be at least 1")

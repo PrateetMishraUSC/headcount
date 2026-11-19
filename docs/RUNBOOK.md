@@ -10,6 +10,9 @@ How Headcount runs in production, how to deploy it, which jobs run when, and wha
 | Worker (`python -m headcount.worker`) | 1 (more is safe) | long-running service | Postgres: one connection, replaced every 360 polls |
 | Nightly report (`python -m headcount.reports`) | 1 host | cron | Postgres: one connection per run |
 | Migrations (`python -m headcount.migrate`) | once per deploy, from one host | by hand / deploy script | Postgres |
+| Organiser admin (`python -m headcount.organisers`) | any host, by hand | when a club has no organiser | Postgres |
+
+The web servers also need `SECRET_KEY` (at least 32 random characters), **identical on every web server**, or a person signed in on one server looks signed out on the next. The web app refuses to start without it. Changing it signs everyone out, which is also how to cut off every session at once if it ever leaks.
 
 All of them read `DATABASE_URL` (and the optional settings in the README) from the environment or from `.env` in the project directory. Cron doesn't pass your shell's environment, but because the code reads `<project>/.env` itself, a `.env` next to the code is enough.
 
@@ -98,7 +101,7 @@ The report covers every event that has started so far, per club, with confirmed,
 - **Worker:** timestamped lines on stdout:
   `2026-11-19T07:22:23.155Z worker[16403] promoted user 118 (Diego Singh) to confirmed for event 17 (Director Q&A)`
   Other lines: `started (…)`, `reconnecting to the database (every 360 polls)`, `database error, will reconnect: …`, `stopped`.
-- **Postgres:** connections are labelled `headcount-web`, `headcount-worker`, `headcount-migrate`, `headcount-reports` and `headcount-health`:
+- **Postgres:** connections are labelled `headcount-web`, `headcount-worker`, `headcount-migrate`, `headcount-reports`, `headcount-admin` and `headcount-health`:
   ```sql
   SELECT application_name, state, now() - query_start AS running_for, query
     FROM pg_stat_activity WHERE application_name LIKE 'headcount%';
@@ -121,5 +124,11 @@ Web servers recover immediately, because every request opens a new connection. T
 **A migration failed.**
 Nothing from that migration was applied. Read the error: if it's `lock timeout`, rerun when traffic is lower or with `--lock-timeout 15s`. For anything else, fix the migration file (it was never recorded as applied, so editing it is fine) and rerun.
 
+**A club has no organiser (or its only organiser has left).**
+An administrator adds one from any host: `.venv/bin/python -m headcount.organisers add <club id> "Their Name"` (`list` shows every club's organisers). They then sign in and set a password on the Account page before they can manage the club.
+
+**Someone forgot their password.**
+There is no email reset. An administrator clears it in `psql`: `UPDATE users SET password_hash = NULL WHERE lower(display_name) = lower('Their Name');`. They can then sign in with just the name and set a new password straight away.
+
 **Someone ran the seed against the wrong database.**
-It refuses to touch a database that already has users or clubs unless `--reset` is passed. Never pass `--reset` with production credentials.
+It refuses to touch a database that already has users or clubs unless `--reset` is passed. Never pass `--reset` with production credentials. (The seed's organisers share a published dev password, another reason it must never run in production.)

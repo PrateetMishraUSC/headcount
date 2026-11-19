@@ -5,9 +5,20 @@
 <form method="post" action="/signin" class="signin">
   <input type="hidden" name="next" value="{{ next }}">
   <label for="display_name">Display name</label>
-  <input id="display_name" name="display_name" value="{{ name }}" maxlength="40" required autofocus autocomplete="nickname">
-  {% if error %}<p class="error-text">{{ error }}</p>{% endif %}
-  <button>Continue</button>
+  <input id="display_name" name="display_name" value="{{ name }}" maxlength="40" required
+         {% if not needs_password %}autofocus{% endif %} autocomplete="username">
+  {% if needs_password %}
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" required autofocus autocomplete="current-password"
+         {% if error %}aria-invalid="true" aria-describedby="signin-error"{% endif %}>
+  <p class="hint">This name is protected with a password.</p>
+  {% endif %}
+  {% if error %}<p class="error-text" id="signin-error">{{ error }}</p>{% endif %}
+  <button>{{ "Sign in" if needs_password else "Continue" }}</button>
 </form>
-<p class="muted">No password. Pick the name other members will see on attendee lists. Using a name that's already taken signs you in as that person.</p>
+{% if needs_password %}
+<p class="muted">Not you? Change the name above to sign in as someone else.</p>
+{% else %}
+<p class="muted">No password needed, unless you've protected your name with one. Pick the name other members will see on attendee lists. Using a name that's already taken (and has no password) signs you in as that person.</p>
+{% endif %}
 {% endblock %}

@@ -2,8 +2,9 @@
 
 A small web app for university clubs to run events with limited seats and a waitlist.
 
-- Sign in by picking a display name (a cookie; no passwords).
-- Clubs have events with a title, description, location, start time and a seat capacity. Anyone signed in can start a club, add events to it and edit them (including the number of seats) until the event starts.
+- Sign in by picking a display name. Members don't need a password, but anyone can protect their name with one (Account page); then signing in as that name needs it.
+- Clubs have events with a title, description, location, start time and a seat capacity.
+- **Organisers** run a club: they edit it, create and edit its events (including the number of seats, until the event starts) and add or remove other organisers. Whoever starts a club is its first organiser. Organisers must have a password.
 - RSVP to an event: if a seat is free you're **confirmed**; if not, you join the **waitlist** and see your position.
 - Cancel a confirmed RSVP or leave the waitlist at any time before the event starts.
 - A background **worker** fills freed seats: every second it promotes the earliest person on the waitlist and sends them a "You got a spot at …" notification.
@@ -27,6 +28,7 @@ pip install -r requirements-dev.txt      # requirements.txt alone for production
 
 # 3. Configuration
 cp .env.example .env                     # edit if your Postgres isn't on localhost:5432
+python3 -c 'import secrets; print("SECRET_KEY=" + secrets.token_urlsafe(32))' >> .env
 
 # 4. Schema and sample data
 python -m headcount.migrate
@@ -37,7 +39,7 @@ uvicorn headcount.web:app --reload --no-access-log
 python -m headcount.worker
 ```
 
-Open <http://localhost:8000>, sign in as one of the seeded people (the seed prints a few names, such as "Kai Ito") or any new name, and RSVP. Use **New club** on the home page, and **New event** / **Edit event** on club and event pages, to add your own. To see the waitlist move, RSVP to a full event, then sign in as a confirmed attendee in another browser and cancel: within a second the worker gives the first person on the waitlist the seat and a notification.
+Open <http://localhost:8000>, sign in as one of the seeded people (the seed prints a few names, such as "Kai Ito") or any new name, and RSVP. The seed also prints the five club organisers and their shared dev password: sign in as one to see **New event**, **Edit club** and **Organisers** on their club. To start your own club, use **New club** on the home page (you'll be asked to set a password first). To see the waitlist move, RSVP to a full event, then sign in as a confirmed attendee in another browser and cancel: within a second the worker gives the first person on the waitlist the seat and a notification.
 
 ## Running each part
 
@@ -47,6 +49,7 @@ Open <http://localhost:8000>, sign in as one of the seeded people (the seed prin
 | Worker | `python -m headcount.worker` | Runs until Ctrl-C / SIGTERM. `--once` does a single poll. Safe to run several at once. |
 | Migrations | `python -m headcount.migrate` | Applies new files from `migrations/` in order. `--list` shows applied/pending. Re-running is a no-op. |
 | Seed data | `python -m headcount.seed` | 5 clubs, 200 people, 25 events (some full with waitlists), times relative to now. Refuses a non-empty database; `--reset` wipes and reloads. |
+| Organisers | `python -m headcount.organisers list` | For administrators: `add CLUB_ID "Name"` gives a club its first organiser (e.g. clubs that existed before organisers did); `remove CLUB_ID "Name"`. |
 | Nightly report | `python -m headcount.reports` | Per club: confirmed / waitlisted / cancelled for every event so far. `--format csv`, `--all` (include upcoming). |
 | Traffic simulator | `python scripts/traffic.py --rate 20 --duration 60` | Hits the JSON API with ~85% reads, 10% RSVPs, 5% cancels. Needs the web app running and seed data. |
 | Tests | `python -m pytest` | Uses the real database at `TEST_DATABASE_URL`, which it wipes. |
@@ -64,10 +67,11 @@ Settings come from environment variables; a `.env` file in the project root fill
 | `WORKER_POLL_INTERVAL_S` | `1` | How often the worker looks for free seats. |
 | `WORKER_RECONNECT_EVERY` | `360` | The worker replaces its database connection every N polls (survives failover). |
 | `DISPLAY_TIMEZONE` | `America/Los_Angeles` | Time zone pages and reports show event times in. |
+| `SECRET_KEY` | *(required by the web app)* | At least 32 random characters; signs the sign-in cookie. The same on every web server. Changing it signs everyone out. |
 
 ## JSON API
 
-There are no passwords in Headcount, so API calls name the person by `user_id`. Interactive docs: <http://localhost:8000/api/docs>.
+API calls name the person by `user_id` and don't check passwords: the API is for trusted scripts (testing, the traffic simulator), not for the public internet. Managing clubs and events is only possible on the website. Interactive docs: <http://localhost:8000/api/docs>.
 
 | Method and path | Returns |
 |---|---|
@@ -106,6 +110,8 @@ headcount/
   migrate.py     python -m headcount.migrate
   rsvps.py       users, RSVP / cancel, waitlist positions (the seat rules live here)
   manage.py      creating and editing clubs and events (validation, capacity changes)
+  auth.py        passwords (scrypt) and the signed sign-in cookie
+  organisers.py  who may manage a club; python -m headcount.organisers
   worker.py      python -m headcount.worker
   queries.py     read queries for clubs, events, notifications
   web.py         FastAPI app: request logging, 503/504 handling, /health

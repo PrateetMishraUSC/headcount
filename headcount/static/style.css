@@ -136,10 +136,11 @@ button:focus-visible, .button:focus-visible, a:focus-visible, input:focus-visibl
 .form textarea { resize: vertical; }
 .form input.short { max-width: 140px; }
 .form [aria-invalid="true"] { border-color: var(--bar-full); }
-.form .hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.form .hint, .signin .hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
 .signin button { justify-self: start; margin-top: 4px; }
 .form-actions { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
 .error-text { color: var(--bar-full); margin: 0; }
+.notice { background: var(--wait-bg); color: var(--text); border-radius: var(--radius); padding: 10px 14px; }
 
 /* Page title with buttons beside it */
 .title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 0 12px; }

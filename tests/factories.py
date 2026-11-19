@@ -29,3 +29,17 @@ def make_user(conn, name):
 
 def make_users(conn, *names):
     return [make_user(conn, n) for n in names]
+
+
+ORGANISER_PASSWORD = "correct horse battery"
+
+
+def make_organiser(conn, club_id, name, *, password=ORGANISER_PASSWORD):
+    """A user (created if needed) who organises the club; password=None leaves them without one."""
+    from headcount import auth
+
+    user = conn.execute("SELECT * FROM users WHERE display_name = %s", (name,)).fetchone() or make_user(conn, name)
+    if password is not None:
+        conn.execute("UPDATE users SET password_hash = %s WHERE id = %s", (auth.hash_password(password), user["id"]))
+    conn.execute("INSERT INTO club_organisers (club_id, user_id) VALUES (%s, %s)", (club_id, user["id"]))
+    return user
