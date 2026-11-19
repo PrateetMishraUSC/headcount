@@ -2,7 +2,13 @@
 {% block title %}{{ club.name }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a></p>
-<h1>{{ club.name }}</h1>
+<div class="title-row">
+  <h1>{{ club.name }}</h1>
+  <span class="actions">
+    <a class="button" href="/clubs/{{ club.id }}/events/new">New event</a>
+    <a class="button secondary" href="/clubs/{{ club.id }}/edit">Edit club</a>
+  </span>
+</div>
 {% if club.description %}<p class="lede">{{ club.description }}</p>{% endif %}
 
 <h2>Upcoming events</h2>

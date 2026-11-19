@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit " ~ club.name if club else "New club" }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="/">Clubs</a>{% if club %} › <a href="/clubs/{{ club.id }}">{{ club.name }}</a>{% endif %}</p>
+<h1>{{ "Edit club" if club else "New club" }}</h1>
+<form method="post" class="form">
+  <label for="name">Name</label>
+  <input id="name" name="name" value="{{ form.name }}" maxlength="80" required
+         {% if errors.name %}aria-invalid="true" aria-describedby="name-error"{% endif %}>
+  {% if errors.name %}<p class="error-text" id="name-error">{{ errors.name }}</p>{% endif %}
+
+  <label for="description">Description <span class="muted">(optional)</span></label>
+  <textarea id="description" name="description" rows="4" maxlength="1000"
+            {% if errors.description %}aria-invalid="true" aria-describedby="description-error"{% endif %}>{{ form.description }}</textarea>
+  {% if errors.description %}<p class="error-text" id="description-error">{{ errors.description }}</p>{% endif %}
+
+  <div class="form-actions">
+    <button>{{ "Save changes" if club else "Create club" }}</button>
+    <a href="{{ '/clubs/%d' % club.id if club else '/' }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

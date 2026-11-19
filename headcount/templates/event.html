@@ -2,7 +2,10 @@
 {% block title %}{{ event.title }}{% endblock %}
 {% block content %}
 <p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ event.club_id }}">{{ event.club_name }}</a></p>
-<h1>{{ event.title }}</h1>
+<div class="title-row">
+  <h1>{{ event.title }}</h1>
+  {% if not event.is_past %}<a class="button secondary" href="/events/{{ event.id }}/edit">Edit event</a>{% endif %}
+</div>
 <dl class="facts">
   <dt>When</dt><dd>{{ event.starts_at | when }}</dd>
   <dt>Where</dt><dd>{{ event.location }}</dd>

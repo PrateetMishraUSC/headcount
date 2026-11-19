@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Clubs{% endblock %}
 {% block content %}
-<h1>Clubs</h1>
+<div class="title-row">
+  <h1>Clubs</h1>
+  <a class="button secondary" href="/clubs/new">New club</a>
+</div>
 {% if clubs %}
 <ul class="cards">
   {% for club in clubs %}
@@ -13,6 +16,6 @@
   {% endfor %}
 </ul>
 {% else %}
-<p class="muted">No clubs yet. Run <code>python -m headcount.seed</code> to load sample data.</p>
+<p class="muted">No clubs yet. <a href="/clubs/new">Start one</a>, or run <code>python -m headcount.seed</code> to load sample data.</p>
 {% endif %}
 {% endblock %}

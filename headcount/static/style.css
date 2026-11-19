@@ -118,18 +118,33 @@ button, .button {
   background: var(--accent); color: var(--accent-text);
 }
 .button:hover { text-decoration: none; }
-button.secondary { background: transparent; color: var(--accent); }
+button.secondary, .button.secondary { background: transparent; color: var(--accent); }
 button.link { background: none; border: none; padding: 0; color: var(--accent); font-weight: normal; }
 button.link:hover { text-decoration: underline; }
-button:focus-visible, .button:focus-visible, a:focus-visible, input:focus-visible {
+button:focus-visible, .button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
-.signin { display: grid; gap: 8px; max-width: 360px; margin-bottom: 16px; }
-.signin input {
-  font: inherit; padding: 9px 12px; border-radius: 8px;
+.signin, .form { display: grid; gap: 8px; max-width: 360px; margin-bottom: 16px; }
+.form { max-width: 520px; }
+.form label { font-weight: 600; margin-top: 8px; }
+.form label .muted { font-weight: normal; }
+.signin input, .form input, .form textarea {
+  font: inherit; padding: 9px 12px; border-radius: 8px; width: 100%;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  color-scheme: light dark;
 }
+.form textarea { resize: vertical; }
+.form input.short { max-width: 140px; }
+.form [aria-invalid="true"] { border-color: var(--bar-full); }
+.form .hint { margin: 0; font-size: 0.9rem; color: var(--muted); }
 .signin button { justify-self: start; margin-top: 4px; }
+.form-actions { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
 .error-text { color: var(--bar-full); margin: 0; }
+
+/* Page title with buttons beside it */
+.title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 0 12px; }
+.title-row h1 { margin: 0; }
+.title-row .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.title-row .button { padding: 6px 14px; font-size: 0.95rem; }
 
 code { font-size: 0.9em; background: var(--border); padding: 1px 5px; border-radius: 4px; }

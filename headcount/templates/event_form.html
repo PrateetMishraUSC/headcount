@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit " ~ event.title if event else "New event" }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="/">Clubs</a> › <a href="/clubs/{{ club.id }}">{{ club.name }}</a>
+  {%- if event %} › <a href="/events/{{ event.id }}">{{ event.title }}</a>{% endif %}</p>
+<h1>{{ "Edit event" if event else "New event" }}</h1>
+
+{% macro error(name) %}{% if errors[name] %}<p class="error-text" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+{% macro invalid(name) %}{% if errors[name] %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}{% endmacro %}
+
+<form method="post" class="form">
+  <label for="title">Title</label>
+  <input id="title" name="title" value="{{ form.title }}" maxlength="120" required {{ invalid("title") }}>
+  {{ error("title") }}
+
+  <label for="location">Location</label>
+  <input id="location" name="location" value="{{ form.location }}" maxlength="120" required {{ invalid("location") }}>
+  {{ error("location") }}
+
+  <label for="starts_at">Starts</label>
+  <input id="starts_at" name="starts_at" type="datetime-local" value="{{ form.starts_at }}" min="{{ min_start }}"
+         required {{ invalid("starts_at") }}>
+  <p class="hint">{{ tz.key.split("/")[-1].replace("_", " ") }} time.</p>
+  {{ error("starts_at") }}
+
+  <label for="capacity">Seats</label>
+  <input id="capacity" name="capacity" type="number" inputmode="numeric" min="{{ event.confirmed if event and event.confirmed else 1 }}"
+         max="10000" value="{{ form.capacity }}" required class="short" {{ invalid("capacity") }}>
+  {% if event %}
+  <p class="hint">{{ event.confirmed }} confirmed{% if event.waitlisted %}, {{ event.waitlisted }} waiting{% endif %}.
+    {%- if event.confirmed %} Seats can't go below {{ event.confirmed }}.{% endif %}
+    {%- if event.waitlisted %} Extra seats go to the waitlist automatically, in order.{% endif %}</p>
+  {% endif %}
+  {{ error("capacity") }}
+
+  <label for="description">Description <span class="muted">(optional)</span></label>
+  <textarea id="description" name="description" rows="5" maxlength="4000" {{ invalid("description") }}>{{ form.description }}</textarea>
+  {{ error("description") }}
+
+  <div class="form-actions">
+    <button>{{ "Save changes" if event else "Create event" }}</button>
+    <a href="{{ '/events/%d' % event.id if event else '/clubs/%d' % club.id }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

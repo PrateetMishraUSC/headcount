@@ -21,7 +21,8 @@ import psycopg
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.exception_handlers import http_exception_handler
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -103,6 +104,16 @@ async def on_http_exception(request: Request, exc: StarletteHTTPException):
     return error_page(exc.status_code, title, message)
 
 
+async def on_validation_error(request: Request, exc: RequestValidationError):
+    """The API keeps FastAPI's detailed 422. A page whose URL doesn't parse
+    (/clubs/abc) is simply a page that doesn't exist."""
+    if wants_json(request):
+        return await request_validation_exception_handler(request, exc)
+    if any(err.get("loc", [None])[0] == "path" for err in exc.errors()):
+        return error_page(404, "Not found", "There's no such page.")
+    return error_page(400, "Something went wrong", "That request didn't make sense. Go back and try again.")
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Headcount", docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
     app.state.settings = settings
@@ -111,6 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_exception_handler(psycopg.errors.QueryCanceled, on_query_canceled)
     app.add_exception_handler(psycopg.OperationalError, on_database_unavailable)
     app.add_exception_handler(StarletteHTTPException, on_http_exception)
+    app.add_exception_handler(RequestValidationError, on_validation_error)
     app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
     @app.get("/health", tags=["ops"])

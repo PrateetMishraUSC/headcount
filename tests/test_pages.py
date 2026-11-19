@@ -199,6 +199,16 @@ def test_unknown_pages_get_an_html_404(client, db):
     assert "no such event" in resp.text
 
 
+def test_malformed_page_urls_get_an_html_404(client, db):
+    for path in ("/clubs/abc", "/events/new", "/clubs/1x/edit"):
+        resp = client.get(path)
+        assert resp.status_code == 404, path
+        assert resp.headers["content-type"].startswith("text/html")
+        assert "no such page" in resp.text
+    api = client.get("/api/events/abc")  # the API still explains what was wrong
+    assert api.status_code == 422 and api.json()["detail"][0]["loc"] == ["path", "event_id"]
+
+
 def test_slow_page_returns_an_html_504(db, database_url, make_client, event):
     client = make_client(statement_timeout_ms=200)
     with psycopg.connect(database_url) as blocker:

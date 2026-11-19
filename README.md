@@ -3,7 +3,7 @@
 A small web app for university clubs to run events with limited seats and a waitlist.
 
 - Sign in by picking a display name (a cookie; no passwords).
-- Clubs have events with a title, description, location, start time and a seat capacity.
+- Clubs have events with a title, description, location, start time and a seat capacity. Anyone signed in can start a club, add events to it and edit them (including the number of seats) until the event starts.
 - RSVP to an event: if a seat is free you're **confirmed**; if not, you join the **waitlist** and see your position.
 - Cancel a confirmed RSVP or leave the waitlist at any time before the event starts.
 - A background **worker** fills freed seats: every second it promotes the earliest person on the waitlist and sends them a "You got a spot at …" notification.
@@ -37,7 +37,7 @@ uvicorn headcount.web:app --reload --no-access-log
 python -m headcount.worker
 ```
 
-Open <http://localhost:8000>, sign in as one of the seeded people (the seed prints a few names, such as "Kai Ito") or any new name, and RSVP. To see the waitlist move, RSVP to a full event, then sign in as a confirmed attendee in another browser and cancel: within a second the worker gives the first person on the waitlist the seat and a notification.
+Open <http://localhost:8000>, sign in as one of the seeded people (the seed prints a few names, such as "Kai Ito") or any new name, and RSVP. Use **New club** on the home page, and **New event** / **Edit event** on club and event pages, to add your own. To see the waitlist move, RSVP to a full event, then sign in as a confirmed attendee in another browser and cancel: within a second the worker gives the first person on the waitlist the seat and a notification.
 
 ## Running each part
 
@@ -92,6 +92,7 @@ curl -s -X POST localhost:8000/api/events/1/rsvp -H 'content-type: application/j
 - **No queue jumping.** If anyone is waiting, a new RSVP joins the waitlist even when a seat has just been freed; that seat belongs to the head of the queue, and the worker hands it over within a second.
 - **Cancelling never promotes.** It only marks the RSVP cancelled; promotion is always the worker's job.
 - **Several workers are safe.** The worker claims an event with `SELECT … FOR UPDATE SKIP LOCKED`, so two workers never work on the same event at the same time, and the database allows only one notification per promotion.
+- **Changing capacity is safe too.** Editing an event takes the same lock, so seats can't be lowered below the number of people already confirmed, even while RSVPs are coming in. Adding seats doesn't promote anyone directly: the worker gives them to the waitlist, in order, within a second.
 - **History is kept.** Cancelled RSVPs stay in the table (for the report); RSVPing again puts you at the back of the queue.
 
 The tests check all of this with real concurrent connections.
@@ -104,6 +105,7 @@ headcount/
   db.py          opening psycopg connections (dict rows, timeouts)
   migrate.py     python -m headcount.migrate
   rsvps.py       users, RSVP / cancel, waitlist positions (the seat rules live here)
+  manage.py      creating and editing clubs and events (validation, capacity changes)
   worker.py      python -m headcount.worker
   queries.py     read queries for clubs, events, notifications
   web.py         FastAPI app: request logging, 503/504 handling, /health
